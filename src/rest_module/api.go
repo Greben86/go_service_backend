@@ -12,6 +12,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var JWT_SECRET = "53A73E5F1C4E0A2D3B5F2D784E6A1B423D6F247D1F6E5C3A596D635A75327855"
@@ -19,11 +20,11 @@ var JWT_SECRET = "53A73E5F1C4E0A2D3B5F2D784E6A1B423D6F247D1F6E5C3A596D635A753278
 // API приложения.
 type API struct {
 	r  *mux.Router // маршрутизатор запросов
-	db *DB         // база данных
+	db *DBManager  // база данных
 }
 
 // Конструктор API.
-func ApiNewInstance(db *DB) *API {
+func ApiNewInstance(db *DBManager) *API {
 	api := API{}
 	api.db = db
 	api.r = mux.NewRouter()
@@ -32,11 +33,12 @@ func ApiNewInstance(db *DB) *API {
 }
 
 func (api *API) exampleHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Authorization: " + r.Header.Values("Authorization")[0])
-	fmt.Println("ID: " + fmt.Sprintf("%#v", r.Context().Value("id")))
-	id, _ := strconv.Atoi(fmt.Sprintf("%#v", r.Context().Value("id")))
-	user := api.db.GetUser(id)
-	fmt.Println(id)
+	id, _ := strconv.Atoi(r.Context().Value("id").(string))
+	user := api.db.GetUserByID(id)
+	if user == nil {
+		w.Write([]byte("Not found"))
+		return
+	}
 
 	w.Write([]byte(user.Username))
 }
@@ -64,8 +66,9 @@ func (api *API) registerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := User{Username: request.Username, Password: request.Password}
-	user.ID = api.db.NewUser(user)
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
+	user := User{Username: request.Username, Password: string(hashedPassword)}
+	user.ID = api.db.InsertUser(&user)
 
 	var token, _ = GenerateJWTToken(fmt.Sprint(user.ID))
 
@@ -101,17 +104,20 @@ func (api *API) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var users []User = api.db.Users()
-	var user User
-	for i := 0; i < len(users); i++ {
-		element := users[i]
-		if element.Username == request.Username && element.Password == request.Password {
-			user = element
-			break
-		}
+	user := api.db.GetUserByName(request.Username)
+	if user == nil {
+		w.Write([]byte("Not found"))
+		return
 	}
 
-	var token, _ = GenerateJWTToken(string(user.ID))
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.Password))
+	if err != nil {
+		fmt.Println(err)
+		w.Write([]byte("Password is wrong"))
+		return
+	}
+
+	var token, _ = GenerateJWTToken(fmt.Sprint(user.ID))
 	var responseDTO = ResponseAuth{JwtToken: token}
 
 	response, _ := json.Marshal(&responseDTO)
@@ -160,14 +166,14 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			http.Error(w, "Invalid token", http.StatusUnauthorized)
 			return
 		}
-		ctx := context.WithValue(r.Context(), "id", claims.Subject)
+		ctx := context.WithValue(r.Context(), "id", claims.ID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 func GenerateJWTToken(id string) (string, error) {
 	claims := jwt.RegisteredClaims{
-		Subject:   id,
+		ID:        id,
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 	}

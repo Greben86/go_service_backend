@@ -19,15 +19,15 @@ type User struct {
 }
 
 // База данных заказов.
-type DB struct {
+type DBMemory struct {
 	m     sync.Mutex   //мьютекс для синхронизации доступа
 	id    int          // текущее значение ID для нового заказа
 	store map[int]User // БД пользователей
 }
 
 // Конструктор БД.
-func NewDB() *DB {
-	db := DB{
+func NewDB() *DBMemory {
+	db := DBMemory{
 		id:    1, // первый номер пользователя
 		store: map[int]User{},
 	}
@@ -35,7 +35,7 @@ func NewDB() *DB {
 }
 
 // Users возвращает всех пользователей
-func (db *DB) Users() []User {
+func (db *DBMemory) Users() []User {
 	db.m.Lock()
 	defer db.m.Unlock()
 	var data []User
@@ -46,7 +46,7 @@ func (db *DB) Users() []User {
 }
 
 // NewUser создает нового пользователя
-func (db *DB) NewUser(u User) int {
+func (db *DBMemory) NewUser(u User) int {
 	db.m.Lock()
 	defer db.m.Unlock()
 	u.ID = db.id
@@ -56,21 +56,21 @@ func (db *DB) NewUser(u User) int {
 }
 
 // GetUser обновляет данные пользователя по ID.
-func (db *DB) GetUser(id int) User {
+func (db *DBMemory) GetUser(id int) User {
 	db.m.Lock()
 	defer db.m.Unlock()
 	return db.store[id]
 }
 
 // UpdateUser обновляет данные пользователя по ID.
-func (db *DB) UpdateUser(u User) {
+func (db *DBMemory) UpdateUser(u User) {
 	db.m.Lock()
 	defer db.m.Unlock()
 	db.store[u.ID] = u
 }
 
 // DeleteUser удаляет пользователя по ID.
-func (db *DB) DeleteUser(id int) {
+func (db *DBMemory) DeleteUser(id int) {
 	db.m.Lock()
 	defer db.m.Unlock()
 	delete(db.store, id)
