@@ -2,7 +2,7 @@ FROM golang:alpine
 COPY . /app
 WORKDIR /app/src/rest_module
 
-RUN go build -o app main.go api.go
+RUN go build -o app *.go
 
 # Открытие порта 8081
 EXPOSE 8081
