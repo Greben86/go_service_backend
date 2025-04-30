@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/qustavo/dotsql"
+
 	_ "github.com/lib/pq"
 )
 
@@ -40,35 +42,25 @@ func (manager *DBManager) CloseConnection() {
 	manager.database.Close()
 }
 
-// Конструктор БД.
-func ConnectDB() {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
-
-	db, err := sql.Open("postgres", psqlInfo)
+// Миграция БД.
+func (manager *DBManager) InitDB() error {
+	dot, err := dotsql.LoadFromFile("repository/init_database.sql")
 	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
+		fmt.Errorf("Файл миграции БД не найден %s", err.Error())
+		return err
 	}
 
-	fmt.Println("Successfully connected!")
-
-	rows, _ := db.Query(`select id, transaction_time from transactions`)
-	defer rows.Close()
-	for rows.Next() {
-		var id int
-		var transaction_time string
-
-		err = rows.Scan(&id, &transaction_time)
-		if err != nil {
-			panic(err)
-		}
-
-		fmt.Println(id, transaction_time)
+	if _, err := dot.Exec(manager.database, "create-users-table"); err != nil {
+		fmt.Errorf("Ошибка создания таблицы пользователей %s", err.Error())
+		return err
 	}
+
+	if _, err := dot.Exec(manager.database, "create-accounts-table"); err != nil {
+		fmt.Errorf("Ошибка создания таблицы счетов %s", err.Error())
+		return err
+	}
+
+	fmt.Println("База данных обновлена!")
+
+	return nil
 }

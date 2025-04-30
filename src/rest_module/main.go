@@ -12,6 +12,7 @@ func main() {
 	// Инициализация соединения с БД
 	var dbManager = NewDBManager()
 	defer dbManager.CloseConnection()
+	_ = dbManager.InitDB()
 	var userRepository = InitUserRepository(dbManager)
 	var userManager = UserManagerNewInstance(userRepository)
 	// Создание объекта API, использующего БД в памяти.
