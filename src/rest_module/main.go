@@ -16,10 +16,18 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Создание объектов API пользователя
 	var userRepository = InitUserRepository(dbManager)
 	var userManager = UserManagerNewInstance(userRepository)
-	// Создание объекта API, использующего БД в памяти.
-	api := ApiNewInstance(userManager)
+	var usersController = UsersControllerNewInstance(userManager)
+	// Создание объектов API счета
+	var accountRepository = InitAccountRepository(dbManager)
+	var accountManager = AccountManagerNewInstance(userRepository, accountRepository)
+	var accountController = AccountControllerNewInstance(accountManager)
+
+	// Главный контроллер приложения
+	api := ApiNewInstance(usersController, accountController)
 	// Запуск сетевой службы и HTTP-сервера
 	// на всех локальных IP-адресах на порту 8080.
 	err = http.ListenAndServe(":8080", api.Router())

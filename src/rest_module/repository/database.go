@@ -5,10 +5,19 @@ import (
 	"fmt"
 	"io"
 	"os"
+
 	"strconv"
 
 	_ "github.com/lib/pq"
 )
+
+// const (
+// 	host     = "localhost"
+// 	port     = 5432
+// 	dbname   = "go_exam_db"
+// 	user     = "admin"
+// 	password = "admin"
+// )
 
 type DBManager struct {
 	database           *sql.DB

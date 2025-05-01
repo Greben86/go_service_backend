@@ -24,10 +24,10 @@ func (repo *UserRepository) Database() *sql.DB {
 }
 
 // Сохранение нового пользователя в БД
-func (repo *UserRepository) InsertUser(user *User) (int, error) {
+func (repo *UserRepository) InsertUser(user *User) (int64, error) {
 	insertStmt := `insert into "users" ("username", "password", "email") values($1, $2, $3) returning "id"`
 
-	id := 0
+	var id int64 = 0
 	err := repo.Database().QueryRow(insertStmt, user.Username, user.Password, user.Email).Scan(&id)
 	if err != nil {
 		return -1, err
@@ -37,8 +37,8 @@ func (repo *UserRepository) InsertUser(user *User) (int, error) {
 }
 
 // Поиск пользователя по идентификатору
-func (repo *UserRepository) GetUserByID(id int) (*User, error) {
-	selectStmt := `select "id", "username", "password", "email" from "users" where "id"=$1`
+func (repo *UserRepository) GetUserByID(id int64) (*User, error) {
+	selectStmt := `select "id", "username", "password", "email" from "users" where "id" = $1`
 	rows, err := repo.Database().Query(selectStmt, id)
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func (repo *UserRepository) GetUserByID(id int) (*User, error) {
 	defer rows.Close()
 
 	if rows.Next() {
-		var id int
+		var id int64
 		var username string
 		var password string
 		var email string
@@ -69,7 +69,7 @@ func (repo *UserRepository) GetUserByID(id int) (*User, error) {
 
 // Поиск пользователя по имени
 func (repo *UserRepository) GetUserByName(name string) (*User, error) {
-	selectStmt := `select "id", "username", "password", "email" from "users" where "username"=$1`
+	selectStmt := `select "id", "username", "password", "email" from "users" where "username" ~ $1`
 	rows, err := repo.Database().Query(selectStmt, name)
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (repo *UserRepository) GetUserByName(name string) (*User, error) {
 	defer rows.Close()
 
 	if rows.Next() {
-		var id int
+		var id int64
 		var username string
 		var password string
 		var email string

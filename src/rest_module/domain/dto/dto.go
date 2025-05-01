@@ -15,7 +15,18 @@ type ResponseAuth struct {
 }
 
 type ResponseUser struct {
-	ID       int    `json:"ID"`
+	ID       int64  `json:"ID"`
 	Username string `json:"Username"`
 	Email    string `json:"email"`
+}
+
+type RequestAccount struct {
+	Name string `json:"Name"`
+	Bank string `json:"Bank"`
+}
+
+type ResponseAccount struct {
+	ID   int64  `json:"ID"`
+	Name string `json:"Name"`
+	Bank string `json:"Bank"`
 }

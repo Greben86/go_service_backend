@@ -1,0 +1,100 @@
+package service
+
+import (
+	"fmt"
+	"rest_module/repository"
+	"sync"
+
+	. "rest_module/domain/model"
+)
+
+type AccountManager struct {
+	m           sync.Mutex                    // мьютекс для синхронизации доступа
+	userRepo    *repository.UserRepository    // репозиторий пользователей
+	accountRepo *repository.AccountRepository // репозиторий счетов
+}
+
+// Конструктор сервиса
+func AccountManagerNewInstance(userRepo *repository.UserRepository, accountRepo *repository.AccountRepository) *AccountManager {
+	manager := AccountManager{}
+	manager.userRepo = userRepo
+	manager.accountRepo = accountRepo
+	return &manager
+}
+
+// Создание счета
+func (manager *AccountManager) AddAccount(name, bank string, user_id int64) (*Account, error) {
+	manager.m.Lock()
+	defer manager.m.Unlock()
+
+	manager.accountRepo.Db.BeginTransaction()
+	user, _ := manager.userRepo.GetUserByID(user_id)
+	if user == nil {
+		manager.accountRepo.Db.RollbackTransaction()
+		return nil, fmt.Errorf("Пользователь с таким логином не найден")
+	}
+
+	exist, _ := manager.accountRepo.GetAccountByName(user_id, name)
+	if exist != nil {
+		manager.accountRepo.Db.RollbackTransaction()
+		return nil, fmt.Errorf("Счет с таким названием уже есть")
+	}
+
+	var err error
+	var account Account = Account{Name: name, Bank: bank, UserId: user_id}
+	account.ID, err = manager.accountRepo.InsertAccount(&account)
+	if err != nil {
+		manager.accountRepo.Db.RollbackTransaction()
+		return nil, fmt.Errorf("Ошибка добавления счета %s", err.Error())
+	}
+	manager.accountRepo.Db.CommitTransaction()
+	return &account, nil
+}
+
+// Поиск счета по идентификатору
+func (manager *AccountManager) FindAccountById(user_id, id int64) (*Account, error) {
+	manager.m.Lock()
+	defer manager.m.Unlock()
+
+	manager.accountRepo.Db.BeginTransaction()
+	account, _ := manager.accountRepo.GetAccountByID(user_id, id)
+	if account == nil {
+		manager.accountRepo.Db.RollbackTransaction()
+		return nil, fmt.Errorf("Счет с таким идентификатором не найден")
+	}
+	manager.accountRepo.Db.CommitTransaction()
+
+	return account, nil
+}
+
+// Поиск счета по названию
+func (manager *AccountManager) FindAccountByName(user_id int64, name string) (*Account, error) {
+	manager.m.Lock()
+	defer manager.m.Unlock()
+
+	manager.accountRepo.Db.BeginTransaction()
+	user, _ := manager.accountRepo.GetAccountByName(user_id, name)
+	if user == nil {
+		manager.accountRepo.Db.RollbackTransaction()
+		return nil, fmt.Errorf("Счет с таким названием не найден")
+	}
+	manager.accountRepo.Db.CommitTransaction()
+
+	return user, nil
+}
+
+// Поиск счетов пользователя
+func (manager *AccountManager) FindAccountsByUserId(user_id int64) (*[]Account, error) {
+	manager.m.Lock()
+	defer manager.m.Unlock()
+
+	manager.accountRepo.Db.BeginTransaction()
+	accounts, _ := manager.accountRepo.GetAccountsByUserId(user_id)
+	if accounts == nil {
+		manager.accountRepo.Db.RollbackTransaction()
+		return nil, fmt.Errorf("Счета пользователя не найдены")
+	}
+	manager.accountRepo.Db.CommitTransaction()
+
+	return accounts, nil
+}

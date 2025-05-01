@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"net/mail"
 	"rest_module/repository"
 	"sync"
 
@@ -27,22 +28,42 @@ func (manager *UserManager) AddUser(Username, Password, Email string) (*User, er
 	manager.m.Lock()
 	defer manager.m.Unlock()
 
+	// Проверяем корректность Email
+	err := validEmail(Email)
+	if err != nil {
+		return nil, fmt.Errorf("Не валидный Email %s", err.Error())
+	}
+
+	if len(Password) < 8 {
+		return nil, fmt.Errorf("Пароль должен содержать не менее 8 символов")
+	}
+
 	manager.repository.Db.BeginTransaction()
 	exist, _ := manager.repository.GetUserByName(Username)
 	if exist != nil {
 		manager.repository.Db.RollbackTransaction()
 		return nil, fmt.Errorf("Пользователь с таким логином уже есть")
 	}
-	manager.repository.Db.CommitTransaction()
 
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(Password), bcrypt.DefaultCost)
 	user := User{Username: Username, Email: Email, Password: string(hashedPassword)}
-	user.ID, _ = manager.repository.InsertUser(&user)
+	user.ID, err = manager.repository.InsertUser(&user)
+	if err != nil {
+		manager.repository.Db.RollbackTransaction()
+		return nil, fmt.Errorf("Ошибка добавления пользователя %s", err.Error())
+	}
+	manager.repository.Db.CommitTransaction()
 	return &user, nil
 }
 
+// Проверка валидности Email
+func validEmail(email string) error {
+	_, err := mail.ParseAddress(email)
+	return err
+}
+
 // Поиск пользователя по идентификатору
-func (manager *UserManager) FindUserById(id int) (*User, error) {
+func (manager *UserManager) FindUserById(id int64) (*User, error) {
 	manager.m.Lock()
 	defer manager.m.Unlock()
 
