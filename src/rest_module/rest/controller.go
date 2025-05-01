@@ -30,19 +30,14 @@ func ApiNewInstance(userManager *UserManager) *API {
 	return &api
 }
 
-func (api *API) exampleHandler(w http.ResponseWriter, r *http.Request) {
-	id, _ := strconv.Atoi(r.Context().Value("id").(string))
-	user, err := api.userManager.FindUserById(id)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	response := ResponseUser{ID: user.ID, Username: user.Username}
+// Endpoint для проверки работы сервиса
+func (api *API) healthHandler(w http.ResponseWriter, r *http.Request) {
+	response := ResponseHealth{Status: "UP"}
 	json, _ := json.Marshal(&response)
 	w.Write(json)
 }
 
+// Endpoint для регистрации
 func (api *API) registerHandler(w http.ResponseWriter, r *http.Request) {
 	// Читаем тело запроса с помощью io.ReadAll
 	body, err := io.ReadAll(r.Body)
@@ -66,7 +61,7 @@ func (api *API) registerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := api.userManager.AddUser(request.Username, request.Password)
+	user, err := api.userManager.AddUser(request.Username, request.Password, request.Email)
 	// Проверяем наличие ошибок
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -79,6 +74,7 @@ func (api *API) registerHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+// Endpoint для аутентификации
 func (api *API) loginHandler(w http.ResponseWriter, r *http.Request) {
 	// Читаем тело запроса с помощью io.ReadAll
 	body, err := io.ReadAll(r.Body)
@@ -122,10 +118,27 @@ func (api *API) loginHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+// Endpoint
+func (api *API) exampleHandler(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(r.Context().Value("id").(string))
+	user, err := api.userManager.FindUserById(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	sender, _ := InitMailSender()
+	sender.SendEmailMessage(user.Email, 0.)
+
+	response := ResponseUser{ID: user.ID, Username: user.Username, Email: user.Email}
+	json, _ := json.Marshal(&response)
+	w.Write(json)
+}
+
 // Регистрация методов API в маршрутизаторе запросов.
 func (api *API) endpoints() {
-	// Предшествующий код
 	// Public routes
+	api.Router().HandleFunc("/health", api.healthHandler).Methods(http.MethodGet)      // проверка
 	api.Router().HandleFunc("/register", api.registerHandler).Methods(http.MethodPost) // регистрация
 	api.Router().HandleFunc("/login", api.loginHandler).Methods(http.MethodPost)       // аутентификация
 	// Protected routes

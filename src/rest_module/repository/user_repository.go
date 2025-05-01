@@ -6,41 +6,42 @@ import (
 )
 
 type UserRepository struct {
-	db *DBManager // база данных
+	Db *DBManager // база данных
 }
 
 func InitUserRepository(db *DBManager) *UserRepository {
 	repo := UserRepository{}
-	repo.db = db
+	repo.Db = db
 	return &repo
 }
 
 func (repo *UserRepository) Database() *sql.DB {
-	if repo.db == nil {
+	if repo.Db == nil {
 		panic("База данных не подключена!")
 	}
-	return repo.db.database
+
+	return repo.Db.database
 }
 
 // Сохранение нового пользователя в БД
-func (repo *UserRepository) InsertUser(user *User) int {
-	insertStmt := `insert into "users" ("username", "password") values($1, $2) returning "id"`
+func (repo *UserRepository) InsertUser(user *User) (int, error) {
+	insertStmt := `insert into "users" ("username", "password", "email") values($1, $2, $3) returning "id"`
 
 	id := 0
-	err := repo.Database().QueryRow(insertStmt, user.Username, user.Password).Scan(&id)
+	err := repo.Database().QueryRow(insertStmt, user.Username, user.Password, user.Email).Scan(&id)
 	if err != nil {
-		panic(err)
+		return -1, err
 	}
 
-	return id
+	return id, nil
 }
 
 // Поиск пользователя по идентификатору
-func (repo *UserRepository) GetUserByID(id int) *User {
-	selectStmt := `select "id", "username", "password" from "users" where "id"=$1`
+func (repo *UserRepository) GetUserByID(id int) (*User, error) {
+	selectStmt := `select "id", "username", "password", "email" from "users" where "id"=$1`
 	rows, err := repo.Database().Query(selectStmt, id)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -48,28 +49,30 @@ func (repo *UserRepository) GetUserByID(id int) *User {
 		var id int
 		var username string
 		var password string
+		var email string
 
-		err = rows.Scan(&id, &username, &password)
+		err = rows.Scan(&id, &username, &password, &email)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 
 		return &User{
 			ID:       id,
 			Username: username,
 			Password: password,
-		}
+			Email:    email,
+		}, nil
 	}
 
-	return nil
+	return nil, nil
 }
 
 // Поиск пользователя по имени
-func (repo *UserRepository) GetUserByName(name string) *User {
-	selectStmt := `select "id", "username", "password" from "users" where "username"=$1`
+func (repo *UserRepository) GetUserByName(name string) (*User, error) {
+	selectStmt := `select "id", "username", "password", "email" from "users" where "username"=$1`
 	rows, err := repo.Database().Query(selectStmt, name)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -77,18 +80,20 @@ func (repo *UserRepository) GetUserByName(name string) *User {
 		var id int
 		var username string
 		var password string
+		var email string
 
-		err = rows.Scan(&id, &username, &password)
+		err = rows.Scan(&id, &username, &password, &email)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 
 		return &User{
 			ID:       id,
 			Username: username,
 			Password: password,
-		}
+			Email:    email,
+		}, nil
 	}
 
-	return nil
+	return nil, nil
 }

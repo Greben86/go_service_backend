@@ -40,9 +40,7 @@ func CheckPasswordForUser(user *User, password string) error {
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	// Проверяем наличие ошибок
 	if err != nil {
-		fmt.Printf("Не правильный пароль %s", err.Error())
-		fmt.Println()
-		return err
+		return fmt.Errorf("Не правильный пароль %s", err.Error())
 	}
 
 	return nil

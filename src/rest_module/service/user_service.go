@@ -23,18 +23,21 @@ func UserManagerNewInstance(repository *repository.UserRepository) *UserManager 
 }
 
 // Создание пользователя
-func (manager *UserManager) AddUser(Username, Password string) (*User, error) {
+func (manager *UserManager) AddUser(Username, Password, Email string) (*User, error) {
 	manager.m.Lock()
 	defer manager.m.Unlock()
 
-	exist := manager.repository.GetUserByName(Username)
+	manager.repository.Db.BeginTransaction()
+	exist, _ := manager.repository.GetUserByName(Username)
 	if exist != nil {
+		manager.repository.Db.RollbackTransaction()
 		return nil, fmt.Errorf("Пользователь с таким логином уже есть")
 	}
+	manager.repository.Db.CommitTransaction()
 
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(Password), bcrypt.DefaultCost)
-	user := User{Username: Username, Password: string(hashedPassword)}
-	user.ID = manager.repository.InsertUser(&user)
+	user := User{Username: Username, Email: Email, Password: string(hashedPassword)}
+	user.ID, _ = manager.repository.InsertUser(&user)
 	return &user, nil
 }
 
@@ -43,10 +46,13 @@ func (manager *UserManager) FindUserById(id int) (*User, error) {
 	manager.m.Lock()
 	defer manager.m.Unlock()
 
-	user := manager.repository.GetUserByID(id)
+	manager.repository.Db.BeginTransaction()
+	user, _ := manager.repository.GetUserByID(id)
 	if user == nil {
+		manager.repository.Db.RollbackTransaction()
 		return nil, fmt.Errorf("Пользователь с таким идентификатором не найден")
 	}
+	manager.repository.Db.CommitTransaction()
 
 	return user, nil
 }
@@ -56,10 +62,13 @@ func (manager *UserManager) FindUserByName(Username string) (*User, error) {
 	manager.m.Lock()
 	defer manager.m.Unlock()
 
-	user := manager.repository.GetUserByName(Username)
+	manager.repository.Db.BeginTransaction()
+	user, _ := manager.repository.GetUserByName(Username)
 	if user == nil {
+		manager.repository.Db.RollbackTransaction()
 		return nil, fmt.Errorf("Пользователь с таким логином не найден")
 	}
+	manager.repository.Db.CommitTransaction()
 
 	return user, nil
 }

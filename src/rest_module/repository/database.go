@@ -3,26 +3,30 @@ package repository
 import (
 	"database/sql"
 	"fmt"
-
-	"github.com/qustavo/dotsql"
+	"io"
+	"os"
+	"strconv"
 
 	_ "github.com/lib/pq"
 )
 
-const (
-	host     = "localhost"
-	port     = 5432
-	user     = "admin"
-	password = "admin"
-	dbname   = "hakaton_db"
-)
-
 type DBManager struct {
-	database *sql.DB
+	database           *sql.DB
+	currentTransaction *sql.Tx
 }
 
 // Конструктор БД.
 func NewDBManager() *DBManager {
+	// Получение параметров из переменных окружения
+	host := os.Getenv("DB_HOST")
+	port, err := strconv.Atoi(os.Getenv("DB_PORT"))
+	if err != nil {
+		panic(err)
+	}
+	dbname := os.Getenv("DB_NAME")
+	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASS")
+
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
 
@@ -35,29 +39,59 @@ func NewDBManager() *DBManager {
 
 	manager := DBManager{}
 	manager.database = db
+	manager.currentTransaction = nil
 	return &manager
 }
 
+// Закрытие соединения
 func (manager *DBManager) CloseConnection() {
 	manager.database.Close()
 }
 
-// Миграция БД.
-func (manager *DBManager) InitDB() error {
-	dot, err := dotsql.LoadFromFile("repository/init_database.sql")
+// Старт транзакции
+func (manager *DBManager) BeginTransaction() error {
+	tx, err := manager.database.Begin()
 	if err != nil {
-		fmt.Errorf("Файл миграции БД не найден %s", err.Error())
-		return err
+		return fmt.Errorf("Ошибка открытия транзакции %s", err.Error())
 	}
 
-	if _, err := dot.Exec(manager.database, "create-users-table"); err != nil {
-		fmt.Errorf("Ошибка создания таблицы пользователей %s", err.Error())
-		return err
+	manager.currentTransaction = tx
+	return nil
+}
+
+// Подтверждение транзакции
+func (manager *DBManager) CommitTransaction() error {
+	if manager.currentTransaction == nil {
+		return fmt.Errorf("Транзакция не была открыта!")
 	}
 
-	if _, err := dot.Exec(manager.database, "create-accounts-table"); err != nil {
-		fmt.Errorf("Ошибка создания таблицы счетов %s", err.Error())
-		return err
+	manager.currentTransaction.Commit()
+	manager.currentTransaction = nil
+	return nil
+}
+
+// Подтверждение транзакции
+func (manager *DBManager) RollbackTransaction() error {
+	if manager.currentTransaction == nil {
+		return fmt.Errorf("Транзакция не была открыта!")
+	}
+
+	manager.currentTransaction.Rollback()
+	manager.currentTransaction = nil
+	return nil
+}
+
+// Миграция БД
+func (manager *DBManager) InitDB() error {
+	file, err := os.Open("repository/init_database.sql")
+	if err != nil {
+		return fmt.Errorf("Файл миграции БД не найден %s", err.Error())
+	}
+
+	body, _ := io.ReadAll(file)
+	_, err = manager.database.Exec(string(body))
+	if err != nil {
+		return fmt.Errorf("Ошибка выполнения скрипта миграции %s", err.Error())
 	}
 
 	fmt.Println("База данных обновлена!")
