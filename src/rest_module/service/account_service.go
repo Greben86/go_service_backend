@@ -23,7 +23,7 @@ func AccountManagerNewInstance(userRepo *repository.UserRepository, accountRepo 
 }
 
 // Создание счета
-func (manager *AccountManager) AddAccount(name, bank string, user_id int64) (*Account, error) {
+func (manager *AccountManager) AddAccount(account Account, user_id int64) (*Account, error) {
 	manager.m.Lock()
 	defer manager.m.Unlock()
 
@@ -34,14 +34,15 @@ func (manager *AccountManager) AddAccount(name, bank string, user_id int64) (*Ac
 		return nil, fmt.Errorf("Пользователь с таким логином не найден")
 	}
 
-	exist, _ := manager.accountRepo.GetAccountByName(user_id, name)
+	exist, _ := manager.accountRepo.GetAccountByName(user_id, account.Name)
 	if exist != nil {
 		manager.accountRepo.Db.RollbackTransaction()
 		return nil, fmt.Errorf("Счет с таким названием уже есть")
 	}
 
 	var err error
-	var account Account = Account{Name: name, Bank: bank, UserId: user_id}
+	account.Balance = 0.
+	account.UserId = user_id
 	account.ID, err = manager.accountRepo.InsertAccount(&account)
 	if err != nil {
 		manager.accountRepo.Db.RollbackTransaction()
@@ -57,7 +58,7 @@ func (manager *AccountManager) FindAccountById(user_id, id int64) (*Account, err
 	defer manager.m.Unlock()
 
 	manager.accountRepo.Db.BeginTransaction()
-	account, _ := manager.accountRepo.GetAccountByID(user_id, id)
+	account, _ := manager.accountRepo.GetAccountByIDAndUserID(user_id, id)
 	if account == nil {
 		manager.accountRepo.Db.RollbackTransaction()
 		return nil, fmt.Errorf("Счет с таким идентификатором не найден")

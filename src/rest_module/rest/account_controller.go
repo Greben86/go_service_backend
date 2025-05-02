@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	. "rest_module/domain/dto"
+	. "rest_module/domain/model"
 	. "rest_module/service"
 
 	"github.com/gorilla/mux"
@@ -39,7 +39,7 @@ func (api *AccountController) AddAccountHandler(w http.ResponseWriter, r *http.R
 	}
 
 	// Выводим тело запроса в ответ
-	request := RequestAccount{}
+	request := Account{}
 	err = json.Unmarshal(body, &request)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -47,15 +47,14 @@ func (api *AccountController) AddAccountHandler(w http.ResponseWriter, r *http.R
 	}
 
 	user_id, _ := strconv.Atoi(r.Context().Value("id").(string))
-	account, err := api.accountManager.AddAccount(request.Name, request.Bank, int64(user_id))
+	account, err := api.accountManager.AddAccount(request, int64(user_id))
 	// Проверяем наличие ошибок
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	responseDTO := ResponseAccount{ID: account.ID, Name: account.Name, Bank: account.Bank}
-	response, _ := json.Marshal(&responseDTO)
+	response, _ := json.Marshal(&account)
 	w.Write(response)
 }
 
@@ -83,8 +82,7 @@ func (api *AccountController) AccountInfoHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	responseDTO := ResponseAccount{ID: account.ID, Name: account.Name, Bank: account.Bank}
-	response, _ := json.Marshal(&responseDTO)
+	response, _ := json.Marshal(&account)
 	w.Write(response)
 }
 
@@ -103,11 +101,6 @@ func (api *AccountController) AccountListHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	var responseDTOs []ResponseAccount
-	for _, account := range *accounts {
-		dto := ResponseAccount{ID: account.ID, Name: account.Name, Bank: account.Bank}
-		responseDTOs = append(responseDTOs, dto)
-	}
-	response, _ := json.Marshal(&responseDTOs)
+	response, _ := json.Marshal(&accounts)
 	w.Write(response)
 }

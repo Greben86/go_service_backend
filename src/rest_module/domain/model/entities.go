@@ -10,12 +10,14 @@ type User struct {
 
 // Счет пользователя
 type Account struct {
-	ID     int64  `json:"id"`
-	Name   string `json:"name"`
-	Bank   string `json:"bank"`
-	UserId int64  `json:"-"`
+	ID      int64   `json:"id"`
+	Name    string  `json:"name"`
+	Bank    string  `json:"bank"`
+	Balance float64 `json:"balance"`
+	UserId  int64   `json:"-"`
 }
 
+// Карта пользователя
 type Card struct {
 	ID              int64  `json:"id"`
 	Number          string `json:"number"`
@@ -24,4 +26,13 @@ type Card struct {
 	CVV             string `json:"-"`
 	AccountId       int64  `json:"account_id"`
 	UserId          int64  `json:"-"`
+}
+
+// Операция
+type Operation struct {
+	ID            int64   `json:"id"`
+	SumValue      float64 `json:"sum_value"`
+	OperationType string  `json:"operation_type"`
+	AccountId     int64   `json:"account_id"`
+	UserId        int64   `json:"-"`
 }

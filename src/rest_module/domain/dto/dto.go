@@ -14,19 +14,8 @@ type ResponseAuth struct {
 	JwtToken string `json:"token"`
 }
 
-type ResponseUser struct {
-	ID       int64  `json:"ID"`
-	Username string `json:"Username"`
-	Email    string `json:"email"`
-}
-
-type RequestAccount struct {
-	Name string `json:"Name"`
-	Bank string `json:"Bank"`
-}
-
-type ResponseAccount struct {
-	ID   int64  `json:"ID"`
-	Name string `json:"Name"`
-	Bank string `json:"Bank"`
+type ResponseTransfer struct {
+	AccountFrom int64   `json:"account_from"`
+	AccountTo   int64   `json:"account_to"`
+	SumValue    float64 `json:"sum_value"`
 }

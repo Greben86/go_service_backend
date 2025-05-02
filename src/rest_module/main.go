@@ -31,9 +31,13 @@ func main() {
 	var cardRepository = InitCardRepository(dbManager)
 	var cardManager = CardManagerNewInstance(mailSender, userRepository, cardRepository)
 	var cardController = CardControllerNewInstance(cardManager)
+	// Создание объектов API оператион
+	var operRepository = InitOperationRepository(dbManager)
+	var operManager = OperationManagerNewInstance(mailSender, userRepository, accountRepository, operRepository)
+	var operController = OperationControllerNewInstance(operManager)
 
 	// Главный контроллер приложения
-	api := ApiNewInstance(usersController, accountController, cardController)
+	api := ApiNewInstance(usersController, accountController, cardController, operController)
 	// Запуск сетевой службы и HTTP-сервера
 	// на всех локальных IP-адресах на порту 8080.
 	err = http.ListenAndServe(":8080", api.Router())

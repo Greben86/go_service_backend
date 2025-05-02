@@ -10,6 +10,7 @@ create table if not exists accounts (
     id bigserial primary key,
     name varchar(255),
     bank varchar(255),
+    balance numeric(16,5),
     user_id bigint);
 
 -- Добавление таблицы счетов
@@ -26,7 +27,7 @@ create table if not exists cards (
 create table if not exists operations (
     id bigserial primary key,
     sum_value numeric(16,5),
-    operation_type smallint check (operation_type between 0 and 1),
+    operation_type varchar(50),
     user_id bigint,
     account_id bigint);
 

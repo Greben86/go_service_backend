@@ -116,7 +116,6 @@ func (api *UsersController) UserInfoHandler(w http.ResponseWriter, r *http.Reque
 	sender, _ := InitMailSender()
 	sender.SendEmailMessage(user.Email, 0.)
 
-	response := ResponseUser{ID: user.ID, Username: user.Username, Email: user.Email}
-	json, _ := json.Marshal(&response)
+	json, _ := json.Marshal(&user)
 	w.Write(json)
 }

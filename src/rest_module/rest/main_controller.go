@@ -14,18 +14,20 @@ import (
 
 // API приложения.
 type API struct {
-	r                 *mux.Router        // маршрутизатор запросов
-	usersController   *UsersController   // контроллер пользователей
-	accountController *AccountController // контроллер счетов
-	cardController    *CardController    // контроллер карт
+	r                 *mux.Router          // маршрутизатор запросов
+	usersController   *UsersController     // контроллер пользователей
+	accountController *AccountController   // контроллер счетов
+	cardController    *CardController      // контроллер карт
+	operController    *OperationController // контроллер операций
 }
 
 // Конструктор API.
-func ApiNewInstance(usersController *UsersController, accountController *AccountController, cardController *CardController) *API {
+func ApiNewInstance(usersController *UsersController, accountController *AccountController, cardController *CardController, operController *OperationController) *API {
 	api := API{}
 	api.usersController = usersController
 	api.accountController = accountController
 	api.cardController = cardController
+	api.operController = operController
 	api.r = mux.NewRouter()
 	api.endpoints()
 	return &api
@@ -54,10 +56,15 @@ func (api *API) endpoints() {
 	authRouter.HandleFunc("/accounts/all", api.accountController.AccountListHandler).Methods(http.MethodGet)      // получить список счетов
 	// Карты
 	authRouter.HandleFunc("/cards/add", api.cardController.AddCardHandler).Methods(http.MethodPost)      // выпустить карту
-	authRouter.HandleFunc("/cards/{id}/get", api.cardController.CardInfoHandler).Methods(http.MethodGet) // выпустить карту
-	authRouter.HandleFunc("/cards/all", api.cardController.CardListHandler).Methods(http.MethodGet)      // выпустить карту
+	authRouter.HandleFunc("/cards/{id}/get", api.cardController.CardInfoHandler).Methods(http.MethodGet) // получить карту
+	authRouter.HandleFunc("/cards/all", api.cardController.CardListHandler).Methods(http.MethodGet)      // получить список карт
+	// Операции
+	authRouter.HandleFunc("/operation/debet", api.operController.AddOperationDebetHandler).Methods(http.MethodPost)       // выполнить операцию дебета
+	authRouter.HandleFunc("/operation/credit", api.operController.AddOperationCreditHandler).Methods(http.MethodPost)     // выполнить операцию кредита
+	authRouter.HandleFunc("/operation/transfer", api.operController.AddOperationTransferHandler).Methods(http.MethodPost) // выполнить перевод
+	authRouter.HandleFunc("/operation/{id}/all", api.operController.AccountOperationListHandler).Methods(http.MethodGet)  // список всех операций пользователя по счету
+	authRouter.HandleFunc("/operation/all", api.operController.OperationListHandler).Methods(http.MethodGet)              // список всех операций пользователя
 
-	authRouter.HandleFunc("/transfer", api.usersController.UserInfoHandler).Methods(http.MethodPost)                    // перевод средств
 	authRouter.HandleFunc("/analytics", api.usersController.UserInfoHandler).Methods(http.MethodGet)                    // получить аналитику
 	authRouter.HandleFunc("/credits/{creditId}/schedule", api.usersController.UserInfoHandler).Methods(http.MethodGet)  // график платежей по кредиту
 	authRouter.HandleFunc("/accounts/{accountId}/predict", api.usersController.UserInfoHandler).Methods(http.MethodGet) // прогноз баланса
