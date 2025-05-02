@@ -6,12 +6,17 @@ import (
 	"net/http"
 	"strconv"
 
-	. "rest_module/domain/dto"
-	. "rest_module/domain/model"
+	. "rest_module/model"
 	. "rest_module/service"
 
 	"github.com/gorilla/mux"
 )
+
+type ResponseTransfer struct {
+	AccountFrom int64   `json:"account_from"`
+	AccountTo   int64   `json:"account_to"`
+	SumValue    float64 `json:"sum_value"`
+}
 
 // API операций
 type OperationController struct {

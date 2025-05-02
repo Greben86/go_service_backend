@@ -7,9 +7,18 @@ import (
 	"net/http"
 	"strconv"
 
-	. "rest_module/domain/dto"
 	. "rest_module/service"
 )
+
+type RequestSignUp struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Email    string `json:"email"`
+}
+
+type ResponseAuth struct {
+	JwtToken string `json:"token"`
+}
 
 // API пользователей
 type UsersController struct {

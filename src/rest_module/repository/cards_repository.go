@@ -2,7 +2,7 @@ package repository
 
 import (
 	"database/sql"
-	. "rest_module/domain/model"
+	. "rest_module/model"
 )
 
 type CardRepository struct {

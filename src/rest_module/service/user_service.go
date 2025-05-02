@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	. "rest_module/domain/model"
+	. "rest_module/model"
 )
 
 type UserManager struct {

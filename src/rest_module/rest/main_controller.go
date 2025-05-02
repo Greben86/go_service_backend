@@ -8,9 +8,12 @@ import (
 
 	"github.com/gorilla/mux"
 
-	. "rest_module/domain/dto"
 	. "rest_module/service"
 )
+
+type ResponseHealth struct {
+	Status string `json:"status"`
+}
 
 // API приложения.
 type API struct {

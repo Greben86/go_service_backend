@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	. "rest_module/domain/model"
+	. "rest_module/model"
 	. "rest_module/service"
 
 	"github.com/gorilla/mux"

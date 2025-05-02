@@ -5,7 +5,7 @@ import (
 	"rest_module/repository"
 	"sync"
 
-	. "rest_module/domain/model"
+	. "rest_module/model"
 )
 
 type OperationManager struct {
