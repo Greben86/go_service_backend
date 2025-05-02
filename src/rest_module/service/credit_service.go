@@ -15,16 +15,18 @@ type CreditManager struct {
 	userRepo    *repository.UserRepository    // репозиторий пользователей
 	accountRepo *repository.AccountRepository // репозиторий счетов
 	creditRepo  *repository.CreditRepository  // репозиторий кредитов
+	paymentRepo *repository.PaymentRepository // репозиторий палтежей
 }
 
 // Конструктор сервиса
 func CreditManagerNewInstance(mailSender *MailSender, userRepo *repository.UserRepository,
-	accountRepo *repository.AccountRepository, creditRepo *repository.CreditRepository) *CreditManager {
+	accountRepo *repository.AccountRepository, creditRepo *repository.CreditRepository, paymentRepo *repository.PaymentRepository) *CreditManager {
 	manager := CreditManager{}
 	manager.mailSender = mailSender
 	manager.userRepo = userRepo
 	manager.accountRepo = accountRepo
 	manager.creditRepo = creditRepo
+	manager.paymentRepo = paymentRepo
 	return &manager
 }
 
@@ -66,6 +68,23 @@ func (manager *CreditManager) AddCredit(credit Credit, user_id int64) (*Credit, 
 		manager.creditRepo.Db.RollbackTransaction()
 		return nil, fmt.Errorf("Ошибка добавления кредита %s", err.Error())
 	}
+
+	// Рассчет графика платежей
+	pay := credit.Amount / float64(credit.MonthCount)
+	for i := 1; i <= credit.MonthCount; i++ {
+		payment := PaymentSchedule{}
+		payment.ExpirationTime = time.Now().AddDate(0, i, 0)
+		payment.Amount = pay
+		payment.PaymentStatus = 0
+		payment.CreditId = credit.ID
+		payment.UserId = user_id
+		payment.ID, err = manager.paymentRepo.InsertPayment(&payment)
+		if err != nil {
+			manager.creditRepo.Db.RollbackTransaction()
+			return nil, fmt.Errorf("Ошибка создания графика платежей %s", err.Error())
+		}
+	}
+
 	manager.creditRepo.Db.CommitTransaction()
 	return &credit, nil
 }
@@ -101,6 +120,22 @@ func (manager *CreditManager) FindCreditsByUserId(user_id int64) (*[]Credit, err
 
 	manager.creditRepo.Db.BeginTransaction()
 	cards, _ := manager.creditRepo.GetCreditsByUserId(user_id)
+	if cards == nil {
+		manager.creditRepo.Db.RollbackTransaction()
+		return nil, fmt.Errorf("Кредиты пользователя не найдены")
+	}
+	manager.creditRepo.Db.CommitTransaction()
+
+	return cards, nil
+}
+
+// График платежей по кредиту
+func (manager *CreditManager) PaymentScheduleByCreditId(user_id, credit_id int64) (*[]PaymentSchedule, error) {
+	manager.m.Lock()
+	defer manager.m.Unlock()
+
+	manager.creditRepo.Db.BeginTransaction()
+	cards, _ := manager.paymentRepo.GetPaymentsByUserIdAndCreditId(user_id, credit_id)
 	if cards == nil {
 		manager.creditRepo.Db.RollbackTransaction()
 		return nil, fmt.Errorf("Кредиты пользователя не найдены")

@@ -16,7 +16,7 @@ create table if not exists accounts (
 -- Добавление таблицы счетов
 create table if not exists cards (
     id bigserial primary key,
-    number varchar(50),
+    number varchar(255),
     expiration_month int,
     expiration_year int,
     cvv varchar(255),
@@ -45,7 +45,8 @@ create table if not exists credits (
 create table if not exists payment_schedules (
     id bigserial primary key,
     expiration_time timestamp(6),
-    sum_value numeric(16,5),
+    amount numeric(16,5),
+    payment_status smallint check (payment_status between 0 and 1),
     user_id bigint,
     credit_id bigint);
 

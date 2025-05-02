@@ -49,3 +49,13 @@ type Credit struct {
 	AccountId  int64     `json:"account_id"`
 	UserId     int64     `json:"-"`
 }
+
+// Платеж по кредиту
+type PaymentSchedule struct {
+	ID             int64     `json:"id"`
+	ExpirationTime time.Time `json:"expiration_time"`
+	Amount         float64   `json:"amount"`
+	PaymentStatus  int       `json:"payment_status"`
+	CreditId       int64     `json:"credit_id"`
+	UserId         int64     `json:"-"`
+}

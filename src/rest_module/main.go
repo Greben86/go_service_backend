@@ -35,9 +35,10 @@ func main() {
 	var operRepository = InitOperationRepository(dbManager)
 	var operManager = OperationManagerNewInstance(mailSender, userRepository, accountRepository, operRepository)
 	var operController = OperationControllerNewInstance(operManager)
-	// Создание объектов API операций
+	// Создание объектов API кредитов
+	var paymentRepository = InitPaymentRepository(dbManager)
 	var creditRepository = InitCreditRepository(dbManager)
-	var creditManager = CreditManagerNewInstance(mailSender, userRepository, accountRepository, creditRepository)
+	var creditManager = CreditManagerNewInstance(mailSender, userRepository, accountRepository, creditRepository, paymentRepository)
 	var creditController = CreditControllerNewInstance(creditManager)
 
 	// Главный контроллер приложения

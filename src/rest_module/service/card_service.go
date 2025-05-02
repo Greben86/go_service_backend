@@ -1,7 +1,10 @@
 package service
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"rest_module/repository"
@@ -11,6 +14,8 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 )
+
+var SECRET_KEY = []byte("1234567890")
 
 type CardManager struct {
 	m          sync.Mutex // мьютекс для синхронизации доступа
@@ -49,6 +54,7 @@ func (manager *CardManager) AddCard(card Card, user_id int64) (*Card, error) {
 	cvv, hashed := GenerateCVV()
 	card.UserId = user_id
 	card.CVV = hashed
+	card.Number = EncodeHMAC(card.Number, SECRET_KEY)
 	card.ID, err = manager.cardRepo.InsertCard(&card)
 	if err != nil {
 		manager.cardRepo.Db.RollbackTransaction()
@@ -66,6 +72,19 @@ func GenerateCVV() (string, string) {
 	hashed, _ := bcrypt.GenerateFromPassword([]byte(cvv), bcrypt.DefaultCost)
 	return cvv, string(hashed)
 }
+
+// Генерация HMAC для номера карты
+func EncodeHMAC(data string, secret []byte) string {
+	h := hmac.New(sha256.New, secret)
+	h.Write([]byte(data))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+// Расшифровка HMAC номера карты
+// func DecodeHMAC(data string, secret []byte) string {
+// 	h := hmac.New(sha256.New, secret)
+// 	return hex.Decode([]byte(data), h.Sum(nil))
+// }
 
 // Поиск карты по идентификатору
 func (manager *CardManager) FindCardById(user_id, id int64) (*Card, error) {

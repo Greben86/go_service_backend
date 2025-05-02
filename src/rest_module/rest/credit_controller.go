@@ -94,13 +94,41 @@ func (api *CreditController) CreditInfoHandler(w http.ResponseWriter, r *http.Re
 // Endpoint списка кредитов пользователя
 func (api *CreditController) CreditListHandler(w http.ResponseWriter, r *http.Request) {
 	// Считывание параметра из контекста
-	id, err := strconv.Atoi(r.Context().Value("id").(string))
+	user_id, err := strconv.Atoi(r.Context().Value("id").(string))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	cards, err := api.creditManager.FindCreditsByUserId(int64(id))
+	cards, err := api.creditManager.FindCreditsByUserId(int64(user_id))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	response, _ := json.Marshal(&cards)
+	w.Write(response)
+}
+
+// Endpoint графика платежей по кредиту
+func (api *CreditController) PaymentScheduleHandler(w http.ResponseWriter, r *http.Request) {
+	// Считывание параметра из контекста
+	user_id, err := strconv.Atoi(r.Context().Value("id").(string))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Считывание параметра {id} из пути запроса.
+	requestParam := mux.Vars(r)["id"]
+	var credit_id int
+	credit_id, err = strconv.Atoi(requestParam)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	cards, err := api.creditManager.PaymentScheduleByCreditId(int64(user_id), int64(credit_id))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
