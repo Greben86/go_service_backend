@@ -34,7 +34,10 @@ create table if not exists operations (
 -- Добавление таблицы кредитов
 create table if not exists credits (
     id bigserial primary key,
-    sum_value numeric(16,5),
+    amount numeric(16,5),
+    rate numeric(16,5),
+    month_count int,
+    start_date timestamp(6),
     user_id bigint,
     account_id bigint);
 

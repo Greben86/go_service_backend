@@ -1,5 +1,7 @@
 package domain_model
 
+import "time"
+
 // Пользователь
 type User struct {
 	ID       int64  `json:"id"`
@@ -35,4 +37,15 @@ type Operation struct {
 	OperationType string  `json:"operation_type"`
 	AccountId     int64   `json:"account_id"`
 	UserId        int64   `json:"-"`
+}
+
+// Кредит
+type Credit struct {
+	ID         int64     `json:"id"`
+	Amount     float64   `json:"amount"`
+	Rate       float64   `json:"rate"`
+	MonthCount int       `json:"month_count"`
+	StartDate  time.Time `json:"start_date"`
+	AccountId  int64     `json:"account_id"`
+	UserId     int64     `json:"-"`
 }

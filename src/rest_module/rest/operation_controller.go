@@ -52,6 +52,11 @@ func (api *OperationController) AddOperationCreditHandler(w http.ResponseWriter,
 		return
 	}
 
+	if request.SumValue <= 0 {
+		http.Error(w, "Сумма операции должна быть больше нуля", http.StatusBadRequest)
+		return
+	}
+
 	user_id, _ := strconv.Atoi(r.Context().Value("id").(string))
 	operation, err := api.operManager.AddOperationCredit(request, int64(user_id))
 	// Проверяем наличие ошибок

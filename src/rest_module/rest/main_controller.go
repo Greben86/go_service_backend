@@ -22,15 +22,18 @@ type API struct {
 	accountController *AccountController   // контроллер счетов
 	cardController    *CardController      // контроллер карт
 	operController    *OperationController // контроллер операций
+	creditController  *CreditController    // контроллер кредитов
 }
 
 // Конструктор API.
-func ApiNewInstance(usersController *UsersController, accountController *AccountController, cardController *CardController, operController *OperationController) *API {
+func ApiNewInstance(usersController *UsersController, accountController *AccountController,
+	cardController *CardController, operController *OperationController, creditController *CreditController) *API {
 	api := API{}
 	api.usersController = usersController
 	api.accountController = accountController
 	api.cardController = cardController
 	api.operController = operController
+	api.creditController = creditController
 	api.r = mux.NewRouter()
 	api.endpoints()
 	return &api
@@ -67,6 +70,10 @@ func (api *API) endpoints() {
 	authRouter.HandleFunc("/operation/transfer", api.operController.AddOperationTransferHandler).Methods(http.MethodPost) // выполнить перевод
 	authRouter.HandleFunc("/operation/{id}/all", api.operController.AccountOperationListHandler).Methods(http.MethodGet)  // список всех операций пользователя по счету
 	authRouter.HandleFunc("/operation/all", api.operController.OperationListHandler).Methods(http.MethodGet)              // список всех операций пользователя
+	// Кредиты
+	authRouter.HandleFunc("/credits/add", api.creditController.AddCreditHandler).Methods(http.MethodPost)      // выдать кредит
+	authRouter.HandleFunc("/credits/{id}/get", api.creditController.CreditInfoHandler).Methods(http.MethodGet) // получить информацию о кредите
+	authRouter.HandleFunc("/credits/all", api.creditController.CreditListHandler).Methods(http.MethodGet)      // получить список кредитов пользователя
 
 	authRouter.HandleFunc("/analytics", api.usersController.UserInfoHandler).Methods(http.MethodGet)                    // получить аналитику
 	authRouter.HandleFunc("/credits/{creditId}/schedule", api.usersController.UserInfoHandler).Methods(http.MethodGet)  // график платежей по кредиту
