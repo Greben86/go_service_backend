@@ -38,7 +38,7 @@ func (repo *AccountRepository) InsertAccount(account *Account) (int64, error) {
 
 // Поиск счета по идентификатору
 func (repo *AccountRepository) GetAccountByID(user_id, id int64) (*Account, error) {
-	selectStmt := `select "id", "name", "bank", "user_id" from "accounts" where "user_id" = $1 and "id" = $2`
+	selectStmt := `select "id", "name", "bank" from "accounts" where "user_id" = $1 and "id" = $2`
 	rows, err := repo.Database().Query(selectStmt, user_id, id)
 	if err != nil {
 		return nil, err
@@ -49,9 +49,8 @@ func (repo *AccountRepository) GetAccountByID(user_id, id int64) (*Account, erro
 		var id int64
 		var name string
 		var bank string
-		var user_id int64
 
-		err = rows.Scan(&id, &name, &bank, &user_id)
+		err = rows.Scan(&id, &name, &bank)
 		if err != nil {
 			return nil, err
 		}
@@ -69,7 +68,7 @@ func (repo *AccountRepository) GetAccountByID(user_id, id int64) (*Account, erro
 
 // Поиск счета по названию
 func (repo *AccountRepository) GetAccountByName(user_id int64, name string) (*Account, error) {
-	selectStmt := `select "id", "name", "bank", "user_id" from "accounts" where "user_id" = $1 and "name" ~ $2`
+	selectStmt := `select "id", "name", "bank" from "accounts" where "user_id" = $1 and "name" ~ $2`
 	rows, err := repo.Database().Query(selectStmt, user_id, name)
 	if err != nil {
 		return nil, err
@@ -80,9 +79,8 @@ func (repo *AccountRepository) GetAccountByName(user_id int64, name string) (*Ac
 		var id int64
 		var name string
 		var bank string
-		var user_id int64
 
-		err = rows.Scan(&id, &name, &bank, &user_id)
+		err = rows.Scan(&id, &name, &bank)
 		if err != nil {
 			return nil, err
 		}

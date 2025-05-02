@@ -16,8 +16,9 @@ create table if not exists accounts (
 create table if not exists cards (
     id bigserial primary key,
     number varchar(50),
-    expiration_time timestamp(6),
-    cvv varchar(50),
+    expiration_month int,
+    expiration_year int,
+    cvv varchar(255),
     user_id bigint,
     account_id bigint);
 

@@ -35,9 +35,9 @@ func InitMailSender() (*MailSender, error) {
 }
 
 // Сообщение для отправки по почте
-func (self *MailSender) createMessage(to string, subject string, body string) *mail.Message {
+func (sender *MailSender) createMessage(to string, subject string, body string) *mail.Message {
 	m := mail.NewMessage()
-	m.SetHeader("From", self.smtpUser)
+	m.SetHeader("From", sender.smtpUser)
 	m.SetHeader("To", to)
 	m.SetHeader("Subject", subject)
 	m.SetBody("text/html", body)
@@ -45,19 +45,19 @@ func (self *MailSender) createMessage(to string, subject string, body string) *m
 }
 
 // SMTP-диалог
-func (self *MailSender) createDialer() *mail.Dialer {
-	d := mail.NewDialer(self.smtpHost, self.smtpPort, self.smtpUser, self.smtpPass)
+func (sender *MailSender) createDialer() *mail.Dialer {
+	d := mail.NewDialer(sender.smtpHost, sender.smtpPort, sender.smtpUser, sender.smtpPass)
 	d.TLSConfig = &tls.Config{
-		ServerName:         self.smtpHost,
+		ServerName:         sender.smtpHost,
 		InsecureSkipVerify: false, // Не отключать проверку сертификата
 	}
 	return d
 }
 
 // Отправка письма
-func (self *MailSender) sendEmail(m *mail.Message) error {
+func (sender *MailSender) sendEmail(m *mail.Message) error {
 	// Настройка подключения
-	d := self.createDialer()
+	d := sender.createDialer()
 
 	// Отправка
 	if err := d.DialAndSend(m); err != nil {
@@ -69,7 +69,30 @@ func (self *MailSender) sendEmail(m *mail.Message) error {
 }
 
 // Уведомление о оплате через email
-func (self *MailSender) SendEmailMessage(emailTo string, amount float64) error {
+func (sender *MailSender) SendCVVEmailMessage(emailTo, cvv string) error {
+	// Создание контента
+	content := fmt.Sprintf(`
+        <h1>Ваша карта создана!</h1>
+        <p>CVV: <strong>%s</strong></p>
+        <small>Это автоматическое уведомление</small>
+    `, cvv)
+	// Подготовка сообщения
+	m := sender.createMessage(emailTo, "Ваша карта создана", content)
+
+	// Отправка
+	if err := sender.sendEmail(m); err != nil {
+		fmt.Printf("Error send mail %s", err.Error())
+		return err
+	}
+
+	fmt.Printf("Email sent to %s", emailTo)
+	fmt.Println()
+
+	return nil
+}
+
+// Уведомление о оплате через email
+func (sender *MailSender) SendEmailMessage(emailTo string, amount float64) error {
 	// Создание контента
 	content := fmt.Sprintf(`
         <h1>Спасибо за оплату!</h1>
@@ -77,10 +100,10 @@ func (self *MailSender) SendEmailMessage(emailTo string, amount float64) error {
         <small>Это автоматическое уведомление</small>
     `, amount)
 	// Подготовка сообщения
-	m := self.createMessage(emailTo, "Платеж успешно проведен", content)
+	m := sender.createMessage(emailTo, "Платеж успешно проведен", content)
 
 	// Отправка
-	if err := self.sendEmail(m); err != nil {
+	if err := sender.sendEmail(m); err != nil {
 		fmt.Printf("Error send mail %s", err.Error())
 		return err
 	}

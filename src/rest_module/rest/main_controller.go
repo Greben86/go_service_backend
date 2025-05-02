@@ -17,13 +17,15 @@ type API struct {
 	r                 *mux.Router        // маршрутизатор запросов
 	usersController   *UsersController   // контроллер пользователей
 	accountController *AccountController // контроллер счетов
+	cardController    *CardController    // контроллер карт
 }
 
 // Конструктор API.
-func ApiNewInstance(usersController *UsersController, accountController *AccountController) *API {
+func ApiNewInstance(usersController *UsersController, accountController *AccountController, cardController *CardController) *API {
 	api := API{}
 	api.usersController = usersController
 	api.accountController = accountController
+	api.cardController = cardController
 	api.r = mux.NewRouter()
 	api.endpoints()
 	return &api
@@ -51,7 +53,10 @@ func (api *API) endpoints() {
 	authRouter.HandleFunc("/accounts/{id}/get", api.accountController.AccountInfoHandler).Methods(http.MethodGet) // получить счет
 	authRouter.HandleFunc("/accounts/all", api.accountController.AccountListHandler).Methods(http.MethodGet)      // получить список счетов
 	// Карты
-	authRouter.HandleFunc("/cards", api.usersController.UserInfoHandler).Methods(http.MethodPost)                       // выпустить карту
+	authRouter.HandleFunc("/cards/add", api.cardController.AddCardHandler).Methods(http.MethodPost)      // выпустить карту
+	authRouter.HandleFunc("/cards/{id}/get", api.cardController.CardInfoHandler).Methods(http.MethodGet) // выпустить карту
+	authRouter.HandleFunc("/cards/all", api.cardController.CardListHandler).Methods(http.MethodGet)      // выпустить карту
+
 	authRouter.HandleFunc("/transfer", api.usersController.UserInfoHandler).Methods(http.MethodPost)                    // перевод средств
 	authRouter.HandleFunc("/analytics", api.usersController.UserInfoHandler).Methods(http.MethodGet)                    // получить аналитику
 	authRouter.HandleFunc("/credits/{creditId}/schedule", api.usersController.UserInfoHandler).Methods(http.MethodGet)  // график платежей по кредиту
@@ -63,6 +68,7 @@ func (api *API) Router() *mux.Router {
 	return api.r
 }
 
+// Проверка токена и добавление идентификатора пользователя в контекст
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
