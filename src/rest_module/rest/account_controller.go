@@ -104,3 +104,21 @@ func (api *AccountController) AccountListHandler(w http.ResponseWriter, r *http.
 	response, _ := json.Marshal(&accounts)
 	w.Write(response)
 }
+
+func (api *AccountController) GetFinancialSummaryHandler(w http.ResponseWriter, r *http.Request) {
+	// Считывание параметра из контекста
+	id, err := strconv.Atoi(r.Context().Value("id").(string))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	accounts, err := api.accountManager.GetFinancialSummaryByUserId(int64(id))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	response, _ := json.Marshal(&accounts)
+	w.Write(response)
+}

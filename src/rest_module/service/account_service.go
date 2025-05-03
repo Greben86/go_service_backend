@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"log"
 	"rest_module/repository"
 	"sync"
 
@@ -98,4 +99,33 @@ func (manager *AccountManager) FindAccountsByUserId(user_id int64) (*[]Account, 
 	manager.accountRepo.Db.CommitTransaction()
 
 	return accounts, nil
+}
+
+// Аналитика счетов пользователя
+func (manager *AccountManager) GetFinancialSummaryByUserId(user_id int64) (map[string]any, error) {
+	manager.m.Lock()
+	defer manager.m.Unlock()
+
+	manager.accountRepo.Db.BeginTransaction()
+	accounts, _ := manager.accountRepo.GetAccountsByUserId(user_id)
+	if accounts == nil {
+		manager.accountRepo.Db.RollbackTransaction()
+		return nil, fmt.Errorf("Счета пользователя не найдены")
+	}
+
+	var totalBalance float64
+	for _, acc := range *accounts {
+		totalBalance += acc.Balance
+	}
+
+	summary := map[string]interface{}{
+		"user_id":               user_id,
+		"total_account_balance": totalBalance,
+		"number_of_accounts":    len(*accounts),
+	}
+
+	log.Printf("Generated financial summary for user %d", user_id)
+	manager.accountRepo.Db.CommitTransaction()
+
+	return summary, nil
 }

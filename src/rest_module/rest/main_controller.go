@@ -57,10 +57,11 @@ func (api *API) endpoints() {
 	authRouter.Use(AuthMiddleware)
 
 	// Счета
-	authRouter.HandleFunc("/accounts/add", api.accountController.AddAccountHandler).Methods(http.MethodPost)      // создать счет
-	authRouter.HandleFunc("/accounts/{id}/get", api.accountController.AccountInfoHandler).Methods(http.MethodGet) // получить счет
-	authRouter.HandleFunc("/accounts/all", api.accountController.AccountListHandler).Methods(http.MethodGet)      // получить список счетов
-	authRouter.HandleFunc("/accounts/{id}/predict", api.usersController.UserInfoHandler).Methods(http.MethodGet)  // прогноз баланса
+	authRouter.HandleFunc("/analytics", api.accountController.GetFinancialSummaryHandler).Methods(http.MethodGet)       // получить аналитику
+	authRouter.HandleFunc("/accounts/add", api.accountController.AddAccountHandler).Methods(http.MethodPost)            // создать счет
+	authRouter.HandleFunc("/accounts/{id}/get", api.accountController.AccountInfoHandler).Methods(http.MethodGet)       // получить счет
+	authRouter.HandleFunc("/accounts/all", api.accountController.AccountListHandler).Methods(http.MethodGet)            // получить список счетов
+	authRouter.HandleFunc("/accounts/{id}/predict", api.creditController.AccountPredictHandler).Methods(http.MethodGet) // прогноз баланса
 	// Карты
 	authRouter.HandleFunc("/cards/add", api.cardController.AddCardHandler).Methods(http.MethodPost)      // выпустить карту
 	authRouter.HandleFunc("/cards/{id}/get", api.cardController.CardInfoHandler).Methods(http.MethodGet) // получить карту
@@ -76,8 +77,6 @@ func (api *API) endpoints() {
 	authRouter.HandleFunc("/credits/{id}/get", api.creditController.CreditInfoHandler).Methods(http.MethodGet)           // получить информацию о кредите
 	authRouter.HandleFunc("/credits/all", api.creditController.CreditListHandler).Methods(http.MethodGet)                // получить список кредитов пользователя
 	authRouter.HandleFunc("/credits/{id}/schedule", api.creditController.PaymentScheduleHandler).Methods(http.MethodGet) // график платежей по кредиту
-
-	authRouter.HandleFunc("/analytics", api.usersController.UserInfoHandler).Methods(http.MethodGet) // получить аналитику
 }
 
 // Router возвращает маршрутизатор запросов.

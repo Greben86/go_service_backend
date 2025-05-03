@@ -103,14 +103,14 @@ func (manager *CreditManager) FindCreditById(user_id, id int64) (*Credit, error)
 	defer manager.m.Unlock()
 
 	manager.creditRepo.Db.BeginTransaction()
-	card, _ := manager.creditRepo.GetCreditByID(user_id, id)
-	if card == nil {
+	credit, _ := manager.creditRepo.GetCreditByID(user_id, id)
+	if credit == nil {
 		manager.creditRepo.Db.RollbackTransaction()
 		return nil, fmt.Errorf("Кредит с таким идентификатором не найден")
 	}
 	manager.creditRepo.Db.CommitTransaction()
 
-	return card, nil
+	return credit, nil
 }
 
 // Поиск кредитов пользователя
@@ -119,14 +119,14 @@ func (manager *CreditManager) FindCreditsByUserId(user_id int64) (*[]Credit, err
 	defer manager.m.Unlock()
 
 	manager.creditRepo.Db.BeginTransaction()
-	cards, _ := manager.creditRepo.GetCreditsByUserId(user_id)
-	if cards == nil {
+	credits, _ := manager.creditRepo.GetCreditsByUserId(user_id)
+	if credits == nil {
 		manager.creditRepo.Db.RollbackTransaction()
 		return nil, fmt.Errorf("Кредиты пользователя не найдены")
 	}
 	manager.creditRepo.Db.CommitTransaction()
 
-	return cards, nil
+	return credits, nil
 }
 
 // График платежей по кредиту
@@ -135,12 +135,49 @@ func (manager *CreditManager) PaymentScheduleByCreditId(user_id, credit_id int64
 	defer manager.m.Unlock()
 
 	manager.creditRepo.Db.BeginTransaction()
-	cards, _ := manager.paymentRepo.GetPaymentsByUserIdAndCreditId(user_id, credit_id)
-	if cards == nil {
+	payments, _ := manager.paymentRepo.GetPaymentsByUserIdAndCreditId(user_id, credit_id)
+	if payments == nil {
 		manager.creditRepo.Db.RollbackTransaction()
 		return nil, fmt.Errorf("Кредиты пользователя не найдены")
 	}
 	manager.creditRepo.Db.CommitTransaction()
 
-	return cards, nil
+	return payments, nil
+}
+
+// График платежей по кредиту
+func (manager *CreditManager) AccountPredictByCreditId(user_id, credit_id int64) (*[]string, error) {
+	manager.m.Lock()
+	defer manager.m.Unlock()
+
+	manager.creditRepo.Db.BeginTransaction()
+	payments, _ := manager.paymentRepo.GetPaymentsByUserIdAndCreditId(user_id, credit_id)
+	if payments == nil {
+		manager.creditRepo.Db.RollbackTransaction()
+		return nil, fmt.Errorf("Кредиты пользователя не найдены")
+	}
+
+	credit, _ := manager.creditRepo.GetCreditByID(user_id, credit_id)
+	if credit == nil {
+		manager.creditRepo.Db.RollbackTransaction()
+		return nil, fmt.Errorf("Кредит с таким идентификатором не найден")
+	}
+
+	account, _ := manager.accountRepo.GetAccountByIDAndUserID(user_id, credit.AccountId)
+	if account == nil {
+		manager.creditRepo.Db.RollbackTransaction()
+		return nil, fmt.Errorf("Счет не найден")
+	}
+
+	var predicts []string
+	var accountAmount float64 = account.Balance
+	for _, payment := range *payments {
+		accountAmount -= payment.Amount
+		preditct := payment.ExpirationTime.Format("2006-01-02") + " " + fmt.Sprintf("%.6f", accountAmount)
+		predicts = append(predicts, preditct)
+	}
+
+	manager.creditRepo.Db.CommitTransaction()
+
+	return &predicts, nil
 }
