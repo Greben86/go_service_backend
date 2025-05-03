@@ -10,6 +10,8 @@ import (
 	"rest_module/repository"
 	"sync"
 
+	log "github.com/sirupsen/logrus"
+
 	. "rest_module/model"
 
 	"golang.org/x/crypto/bcrypt"
@@ -35,6 +37,7 @@ func CardManagerNewInstance(mailSender *MailSender, userRepo *repository.UserRep
 
 // Создание карты
 func (manager *CardManager) AddCard(card Card, user_id int64) (*Card, error) {
+	log.Println("Создание карты")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 
@@ -80,14 +83,9 @@ func EncodeHMAC(data string, secret []byte) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-// Расшифровка HMAC номера карты
-// func DecodeHMAC(data string, secret []byte) string {
-// 	h := hmac.New(sha256.New, secret)
-// 	return hex.Decode([]byte(data), h.Sum(nil))
-// }
-
 // Поиск карты по идентификатору
 func (manager *CardManager) FindCardById(user_id, id int64) (*Card, error) {
+	log.Println("Поиск карты по идентификатору")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 
@@ -104,6 +102,7 @@ func (manager *CardManager) FindCardById(user_id, id int64) (*Card, error) {
 
 // Поиск карты по номеру
 func (manager *CardManager) FindCardByNumber(user_id int64, number string) (*Card, error) {
+	log.Println("Поиск карты по номеру")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 
@@ -120,6 +119,7 @@ func (manager *CardManager) FindCardByNumber(user_id int64, number string) (*Car
 
 // Поиск карт пользователя
 func (manager *CardManager) FindCardsByUserId(user_id int64) (*[]Card, error) {
+	log.Println("Поиск карт пользователя")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 

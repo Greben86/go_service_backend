@@ -5,6 +5,8 @@ import (
 	"rest_module/repository"
 	"sync"
 
+	log "github.com/sirupsen/logrus"
+
 	. "rest_module/model"
 )
 
@@ -28,6 +30,7 @@ func OperationManagerNewInstance(mailSender *MailSender, userRepo *repository.Us
 
 // Создание операции дебета
 func (manager *OperationManager) AddOperationDebet(operation Operation, user_id int64) (*Operation, error) {
+	log.Println("Создание операции дебета")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 	var err error
@@ -66,6 +69,7 @@ func (manager *OperationManager) AddOperationDebet(operation Operation, user_id 
 
 // Создание операции кредита
 func (manager *OperationManager) AddOperationCredit(operation Operation, user_id int64) (*Operation, error) {
+	log.Println("Создание операции кредита")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 	var err error
@@ -104,6 +108,7 @@ func (manager *OperationManager) AddOperationCredit(operation Operation, user_id
 
 // Создание операции перевода
 func (manager *OperationManager) AddOperationTransfer(sum_value float64, account_from, account_to, user_id int64) error {
+	log.Println("Создание операции перевода")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 	var err error
@@ -170,6 +175,7 @@ func (manager *OperationManager) AddOperationTransfer(sum_value float64, account
 
 // Поиск операций пользователя
 func (manager *OperationManager) FindOperationsByUserId(user_id int64) (*[]Operation, error) {
+	log.Println("Поиск операций пользователя")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 
@@ -186,6 +192,7 @@ func (manager *OperationManager) FindOperationsByUserId(user_id int64) (*[]Opera
 
 // Поиск операций пользователя по счету
 func (manager *OperationManager) FindOperationsByAccountId(user_id, account_id int64) (*[]Operation, error) {
+	log.Println("Поиск операций пользователя по счету")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 

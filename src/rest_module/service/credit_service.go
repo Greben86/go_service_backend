@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	. "rest_module/model"
 )
 
@@ -30,8 +32,9 @@ func CreditManagerNewInstance(mailSender *MailSender, userRepo *repository.UserR
 	return &manager
 }
 
-// Создание карты
+// Создание кредита
 func (manager *CreditManager) AddCredit(credit Credit, user_id int64) (*Credit, error) {
+	log.Println("Создание кредита")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 	var err error
@@ -99,6 +102,7 @@ func (manager *CreditManager) getRate() (float64, error) {
 
 // Поиск кредита по идентификатору
 func (manager *CreditManager) FindCreditById(user_id, id int64) (*Credit, error) {
+	log.Println("Поиск кредита по идентификатору")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 
@@ -115,6 +119,7 @@ func (manager *CreditManager) FindCreditById(user_id, id int64) (*Credit, error)
 
 // Поиск кредитов пользователя
 func (manager *CreditManager) FindCreditsByUserId(user_id int64) (*[]Credit, error) {
+	log.Println("Поиск кредитов пользователя")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 
@@ -131,6 +136,7 @@ func (manager *CreditManager) FindCreditsByUserId(user_id int64) (*[]Credit, err
 
 // График платежей по кредиту
 func (manager *CreditManager) PaymentScheduleByCreditId(user_id, credit_id int64) (*[]PaymentSchedule, error) {
+	log.Println("График платежей по кредиту")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 
@@ -145,8 +151,9 @@ func (manager *CreditManager) PaymentScheduleByCreditId(user_id, credit_id int64
 	return payments, nil
 }
 
-// График платежей по кредиту
+// Прогноз балланса счета
 func (manager *CreditManager) AccountPredictByCreditId(user_id, credit_id int64) (*[]string, error) {
+	log.Println("Прогноз балланса счета")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 
@@ -180,4 +187,59 @@ func (manager *CreditManager) AccountPredictByCreditId(user_id, credit_id int64)
 	manager.creditRepo.Db.CommitTransaction()
 
 	return &predicts, nil
+}
+
+// Списание платежей по графику
+func (manager *CreditManager) PaymentForCredit() error {
+	log.Println("Списание платежей по графику")
+	manager.m.Lock()
+	defer manager.m.Unlock()
+
+	manager.creditRepo.Db.BeginTransaction()
+	payments, _ := manager.paymentRepo.GetActivePayments()
+	if payments == nil {
+		manager.creditRepo.Db.RollbackTransaction()
+		return fmt.Errorf("Платежи не найдены")
+	}
+
+	var err error
+	for _, payment := range *payments {
+		credit, _ := manager.creditRepo.GetCreditByID(payment.UserId, payment.CreditId)
+		if credit == nil {
+			continue
+		}
+
+		account, _ := manager.accountRepo.GetAccountByIDAndUserID(payment.UserId, credit.AccountId)
+		if account == nil {
+			continue
+		}
+
+		if account.Balance < payment.Amount {
+			// На баллансе не хватает - начисляем проценты и переносим платеж
+			payment.Amount += payment.Amount / 10
+			payment.ExpirationTime = time.Now().AddDate(0, 0, 1)
+			err = manager.paymentRepo.UpdatePayment(&payment)
+			if err != nil {
+				manager.creditRepo.Db.RollbackTransaction()
+				return err
+			}
+		} else {
+			// Списываем деньги
+			payment.PaymentStatus = 1
+			err = manager.paymentRepo.UpdatePayment(&payment)
+			if err != nil {
+				return err
+			}
+			account.Balance -= payment.Amount
+			err = manager.accountRepo.UpdateAccount(account)
+			if err != nil {
+				manager.creditRepo.Db.RollbackTransaction()
+				return err
+			}
+		}
+	}
+
+	manager.creditRepo.Db.CommitTransaction()
+
+	return nil
 }

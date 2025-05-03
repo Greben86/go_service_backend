@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 
+	log "github.com/sirupsen/logrus"
+
 	"strconv"
 
 	_ "github.com/lib/pq"
@@ -44,7 +46,7 @@ func NewDBManager() *DBManager {
 		panic(err)
 	}
 
-	fmt.Println("Successfully connected!")
+	log.Println("База данных подключена!")
 
 	manager := DBManager{}
 	manager.database = db
@@ -103,7 +105,7 @@ func (manager *DBManager) InitDB() error {
 		return fmt.Errorf("Ошибка выполнения скрипта миграции %s", err.Error())
 	}
 
-	fmt.Println("База данных обновлена!")
+	log.Println("База данных обновлена!")
 
 	return nil
 }

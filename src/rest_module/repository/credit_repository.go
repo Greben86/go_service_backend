@@ -110,3 +110,42 @@ func (repo *CreditRepository) GetCreditsByUserId(user_id int64) (*[]Credit, erro
 
 	return &credits, nil
 }
+
+// Список всех кредитов
+func (repo *CreditRepository) GetCredits() (*[]Credit, error) {
+	selectStmt := `select "id", "amount", "rate", "month_count", "start_date", "account_id", "user_id" from "credits"`
+	rows, err := repo.Database().Query(selectStmt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var credits []Credit
+	for rows.Next() {
+		var id int64
+		var amount float64
+		var rate float64
+		var month_count int
+		var start_date time.Time
+		var account_id int64
+		var user_id int64
+
+		err = rows.Scan(&id, &amount, &rate, &month_count, &start_date, &account_id, &user_id)
+		if err != nil {
+			return nil, err
+		}
+
+		credit := Credit{
+			ID:         id,
+			Amount:     amount,
+			Rate:       rate,
+			MonthCount: month_count,
+			StartDate:  start_date,
+			AccountId:  account_id,
+			UserId:     user_id,
+		}
+		credits = append(credits, credit)
+	}
+
+	return &credits, nil
+}

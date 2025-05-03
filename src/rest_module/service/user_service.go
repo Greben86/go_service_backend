@@ -6,6 +6,8 @@ import (
 	"rest_module/repository"
 	"sync"
 
+	log "github.com/sirupsen/logrus"
+
 	"golang.org/x/crypto/bcrypt"
 
 	. "rest_module/model"
@@ -25,6 +27,7 @@ func UserManagerNewInstance(repository *repository.UserRepository) *UserManager 
 
 // Создание пользователя
 func (manager *UserManager) AddUser(Username, Password, Email string) (*User, error) {
+	log.Println("Создание пользователя")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 
@@ -64,6 +67,7 @@ func validEmail(email string) error {
 
 // Поиск пользователя по идентификатору
 func (manager *UserManager) FindUserById(id int64) (*User, error) {
+	log.Println("Поиск пользователя по идентификатору")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 
@@ -80,6 +84,7 @@ func (manager *UserManager) FindUserById(id int64) (*User, error) {
 
 // Поиск пользователя по имени
 func (manager *UserManager) FindUserByName(Username string) (*User, error) {
+	log.Println("Поиск пользователя по имени")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 

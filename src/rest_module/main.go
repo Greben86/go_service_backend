@@ -1,8 +1,12 @@
 package main
 
 import (
-	"log"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
+
+	"github.com/robfig/cron"
+
 	. "rest_module/repository"
 	. "rest_module/rest"
 	. "rest_module/service"
@@ -41,6 +45,19 @@ func main() {
 	var creditManager = CreditManagerNewInstance(mailSender, userRepository, accountRepository, creditRepository, paymentRepository)
 	var creditController = CreditControllerNewInstance(creditManager)
 
+	// Запускаем планировщик
+	c := cron.New()
+	// Установка задания списания платежей
+	c.AddFunc("* 0 * * *", func() {
+		log.Println("Старт задания списания платежей")
+		err = creditManager.PaymentForCredit()
+		if err != nil {
+			log.Panicln(err.Error())
+		}
+	})
+	// Старт планировщика
+	c.Start()
+
 	// Главный контроллер приложения
 	api := ApiNewInstance(usersController, accountController, cardController, operController, creditController)
 	// Запуск сетевой службы и HTTP-сервера
@@ -49,4 +66,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Остановка планировщика
+	c.Stop()
 }

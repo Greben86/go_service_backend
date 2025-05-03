@@ -2,9 +2,10 @@ package service
 
 import (
 	"fmt"
-	"log"
 	"rest_module/repository"
 	"sync"
+
+	log "github.com/sirupsen/logrus"
 
 	. "rest_module/model"
 )
@@ -25,6 +26,7 @@ func AccountManagerNewInstance(userRepo *repository.UserRepository, accountRepo 
 
 // Создание счета
 func (manager *AccountManager) AddAccount(account Account, user_id int64) (*Account, error) {
+	log.Println("Создание счета")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 
@@ -55,6 +57,7 @@ func (manager *AccountManager) AddAccount(account Account, user_id int64) (*Acco
 
 // Поиск счета по идентификатору
 func (manager *AccountManager) FindAccountById(user_id, id int64) (*Account, error) {
+	log.Println("Поиск счета по идентификатору")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 
@@ -71,6 +74,7 @@ func (manager *AccountManager) FindAccountById(user_id, id int64) (*Account, err
 
 // Поиск счета по названию
 func (manager *AccountManager) FindAccountByName(user_id int64, name string) (*Account, error) {
+	log.Println("Поиск счета по названию")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 
@@ -87,6 +91,7 @@ func (manager *AccountManager) FindAccountByName(user_id int64, name string) (*A
 
 // Поиск счетов пользователя
 func (manager *AccountManager) FindAccountsByUserId(user_id int64) (*[]Account, error) {
+	log.Println("Поиск счетов пользователя")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 
@@ -103,6 +108,7 @@ func (manager *AccountManager) FindAccountsByUserId(user_id int64) (*[]Account, 
 
 // Аналитика счетов пользователя
 func (manager *AccountManager) GetFinancialSummaryByUserId(user_id int64) (map[string]any, error) {
+	log.Println("Аналитика счетов пользователя")
 	manager.m.Lock()
 	defer manager.m.Unlock()
 

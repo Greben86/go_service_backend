@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/beevik/etree"
 )
 
@@ -82,6 +84,7 @@ func (service *CentralBankRateService) parseXMLResponse(rawBody []byte) (float64
 }
 
 func (service *CentralBankRateService) GetCentralBankRate() (float64, error) {
+	log.Println("Получение ставки ЦБ")
 	soapRequest := service.buildSOAPRequest()
 	rawBody, err := service.sendRequest(soapRequest)
 	if err != nil {
