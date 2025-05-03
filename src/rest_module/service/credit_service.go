@@ -72,8 +72,8 @@ func (manager *CreditManager) AddCredit(credit Credit, user_id int64) (*Credit, 
 		return nil, fmt.Errorf("Ошибка добавления кредита %s", err.Error())
 	}
 
-	// Рассчет графика платежей
-	pay := credit.Amount / float64(credit.MonthCount)
+	// Рассчет аннуитетных платежей
+	pay := (credit.Amount + ((credit.Amount / 100) * credit.Rate)) / float64(credit.MonthCount)
 	for i := 1; i <= credit.MonthCount; i++ {
 		payment := PaymentSchedule{}
 		payment.ExpirationTime = time.Now().AddDate(0, i, 0)

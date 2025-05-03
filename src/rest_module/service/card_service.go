@@ -68,7 +68,7 @@ func (manager *CardManager) AddCard(card Card, user_id int64) (*Card, error) {
 	return &card, nil
 }
 
-// Создание CVV-кода
+// Создание CVV-кода по алгоритму Луна
 func GenerateCVV() (string, string) {
 	n, _ := rand.Int(rand.Reader, big.NewInt(900))
 	cvv := fmt.Sprintf("%03d", n.Int64()+100)
