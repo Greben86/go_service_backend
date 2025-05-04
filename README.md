@@ -56,5 +56,3 @@
  * `/credits/{id}/get` - получить информацию о кредите
  * `/credits/all` - получить список кредитов пользователя
  * `/credits/{id}/schedule` - график платежей по кредиту
-
- Для проверки работы endpoint можно воспользоваться файлом [Insomnia_Go_backend.json](Insomnia_Go_backend.json) - это проект для Insomnia
